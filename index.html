@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVPL Navigation Restructuring - Gantt Chart</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 26px;
+        }
+        
+        .project-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .project-info p {
+            margin-bottom: 5px;
+            color: #1565c0;
+            font-size: 14px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .control-group label {
+            font-weight: 500;
+            color: #546e7a;
+            font-size: 14px;
+        }
+        
+        .control-group input,
+        .control-group select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .btn:hover {
+            background: #1976d2;
+        }
+        
+        .btn.export {
+            background: #4caf50;
+        }
+        
+        .btn.export:hover {
+            background: #388e3c;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .legend-color {
+            width: 35px;
+            height: 20px;
+            border-radius: 3px;
+        }
+        
+        .gantt-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .gantt-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1400px;
+        }
+        
+        .gantt-table th {
+            background: #37474f;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            border-right: 1px solid #546e7a;
+            border-bottom: 2px solid #263238;
+        }
+        
+        .gantt-table th:first-child {
+            text-align: left;
+            padding-left: 15px;
+            min-width: 280px;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+        
+        .gantt-table td {
+            border: 1px solid #e0e0e0;
+            padding: 6px;
+            vertical-align: middle;
+        }
+        
+        .gantt-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .task-name {
+            padding: 10px 15px;
+            font-size: 13px;
+            color: #2c3e50;
+            font-weight: 500;
+            background: white;
+            border-right: 2px solid #90a4ae;
+            min-width: 280px;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+        }
+        
+        .phase-row td {
+            background: #5e35b1;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 15px;
+            border: none;
+        }
+        
+        .phase-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: space-between;
+        }
+        
+        .phase-name {
+            flex: 1;
+        }
+        
+        .phase-date-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        
+        .phase-date-input label {
+            opacity: 0.9;
+        }
+        
+        .phase-date-input input {
+            padding: 4px 8px;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 3px;
+            font-size: 12px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        
+        .subtask {
+            padding-left: 30px;
+            color: #546e7a;
+            font-size: 12px;
+        }
+        
+        .timeline-cell {
+            text-align: center;
+            min-width: 50px;
+            max-width: 70px;
+            padding: 4px;
+            position: relative;
+        }
+        
+        .bar {
+            height: 24px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .bar:hover {
+            opacity: 0.85;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .bar-research { background: #1e88e5; }
+        .bar-analysis { background: #8e24aa; }
+        .bar-planning { background: #e53935; }
+        .bar-design { background: #fb8c00; }
+        .bar-development { background: #43a047; }
+        .bar-testing { background: #00acc1; }
+        .bar-launch { background: #c62828; }
+        
+        .milestone {
+            width: 20px;
+            height: 20px;
+            background: #d32f2f;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            margin: 0 auto;
+            cursor: pointer;
+        }
+        
+        .milestone:hover {
+            transform: scale(1.15);
+        }
+        
+        .tooltip {
+            position: fixed;
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            display: none;
+            max-width: 250px;
+            line-height: 1.4;
+        }
+        
+        .instructions {
+            margin-top: 25px;
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 4px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .instructions h3 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .instructions ul {
+            margin-left: 20px;
+            color: #1b5e20;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .controls, .instructions, .btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>EVPL Navigation Restructuring - Project Timeline</h1>
+        
+        <div class="project-info">
+            <p><strong>Start Date:</strong> <span id="projectStart"></span></p>
+            <p><strong>End Date:</strong> <span id="projectEnd"></span></p>
+            <p><strong>Duration:</strong> <span id="duration">16</span> weeks</p>
+            <p><strong>Goal:</strong> Remove Discover/Explore/Connect layers and restructure site navigation</p>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="startDate">Project Start:</label>
+                <input type="date" id="startDate" onchange="updateChart()">
+            </div>
+            <div class="control-group">
+                <label for="timeline">Timeline:</label>
+                <select id="timeline" onchange="updateChart()">
+                    <option value="10">10 Weeks (Accelerated)</option>
+                    <option value="16" selected>16 Weeks (Comprehensive)</option>
+                </select>
+            </div>
+            <button class="btn export" onclick="exportCSV()">Export to CSV</button>
+            <button class="btn" onclick="window.print()">Print</button>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color bar-research"></div>
+                <span>Research</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-analysis"></div>
+                <span>Analysis</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-planning"></div>
+                <span>Planning</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-design"></div>
+                <span>Design</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-development"></div>
+                <span>Development</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-testing"></div>
+                <span>Testing</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color bar-launch"></div>
+                <span>Launch</span>
+            </div>
+            <div class="legend-item">
+                <div class="milestone"></div>
+                <span>Milestone</span>
+            </div>
+        </div>
+
+        <div class="gantt-wrapper">
+            <table class="gantt-table" id="ganttTable">
+                <thead>
+                    <tr id="headerRow">
+                        <th>Task Name</th>
+                    </tr>
+                </thead>
+                <tbody id="ganttBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="instructions">
+            <h3>How to Use This Chart</h3>
+            <ul>
+                <li><strong>Project Start Date:</strong> Change the main project start date at the top</li>
+                <li><strong>Phase Start Dates:</strong> Each phase header (purple bar) has its own start date you can adjust independently</li>
+                <li><strong>Timeline:</strong> Switch between 10-week (accelerated) and 16-week (comprehensive) plans</li>
+                <li><strong>Hover:</strong> Hover over colored bars and milestones to see task details and dates</li>
+                <li><strong>Export:</strong> Export to CSV to import into project management software</li>
+                <li><strong>Print:</strong> Print for reference or team meetings</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        const tasks16Week = [
+            { phase: 'Phase 1: Research & Analysis (Weeks 1-3)', isPhase: true, phaseId: 'phase1', startWeek: 1 },
+            { name: 'Current State Audit', type: 'research', start: 1, weeks: 2, phaseId: 'phase1' },
+            { name: 'Tree Testing (Current Nav)', type: 'research', start: 2, weeks: 1, phaseId: 'phase1' },
+            { name: 'Open Card Sort', type: 'research', start: 3, weeks: 1, phaseId: 'phase1' },
+            { name: 'Competitor Analysis', type: 'analysis', start: 3, weeks: 1, phaseId: 'phase1' },
+            
+            { phase: 'Phase 2: Information Architecture (Weeks 4-7)', isPhase: true, phaseId: 'phase2', startWeek: 4 },
+            { name: 'Content Inventory & Tagging', type: 'analysis', start: 4, weeks: 2, phaseId: 'phase2' },
+            { name: 'Design New Sitemap (Remove D/E/C)', type: 'planning', start: 5, weeks: 2, phaseId: 'phase2' },
+            { name: 'Closed Card Sort', type: 'testing', start: 6, weeks: 1, phaseId: 'phase2' },
+            { name: 'Tree Testing (New Nav)', type: 'testing', start: 7, weeks: 1, phaseId: 'phase2' },
+            { name: '✓ Stakeholder Approval', type: 'milestone', start: 7, phaseId: 'phase2' },
+            
+            { phase: 'Phase 3: Navigation Design (Weeks 8-11)', isPhase: true, phaseId: 'phase3', startWeek: 8 },
+            { name: 'Desktop Navigation Design', type: 'design', start: 8, weeks: 2, phaseId: 'phase3' },
+            { name: 'Mobile Navigation Design', type: 'design', start: 9, weeks: 2, phaseId: 'phase3' },
+            { name: 'Create Interactive Prototypes', type: 'design', start: 10, weeks: 1, phaseId: 'phase3' },
+            { name: 'User Testing - Prototypes', type: 'testing', start: 11, weeks: 1, phaseId: 'phase3' },
+            
+            { phase: 'Phase 4: Analytics & Prep (Weeks 10-13)', isPhase: true, phaseId: 'phase4', startWeek: 10 },
+            { name: 'Learn GA4 Basics & Best Practices', type: 'research', start: 10, weeks: 1, phaseId: 'phase4' },
+            { name: 'Configure GA4 Property & Data Streams', type: 'development', start: 11, weeks: 1, phaseId: 'phase4' },
+            { name: 'Set Up Events & Conversions', type: 'development', start: 12, weeks: 1, phaseId: 'phase4' },
+            { name: 'Test GA4 Tracking & Validation', type: 'testing', start: 13, weeks: 1, phaseId: 'phase4' },
+            { name: 'Redirect Mapping (ALL URLs)', type: 'planning', start: 10, weeks: 2, phaseId: 'phase4' },
+            { name: 'Implementation Documentation', type: 'planning', start: 11, weeks: 2, phaseId: 'phase4' },
+            
+            { phase: 'Phase 5: Development & Testing (Weeks 13-15)', isPhase: true, phaseId: 'phase5', startWeek: 13 },
+            { name: '✓ COMPLETE BACKUP', type: 'milestone', start: 13, phaseId: 'phase5' },
+            { name: 'WordPress Menu Updates (STAGING)', type: 'development', start: 13, weeks: 2, phaseId: 'phase5' },
+            { name: 'CSS/JavaScript Development', type: 'development', start: 13, weeks: 2, phaseId: 'phase5' },
+            { name: 'Implement 301 Redirects', type: 'development', start: 14, weeks: 1, phaseId: 'phase5' },
+            { name: 'Update Internal Links', type: 'development', start: 14, weeks: 1, phaseId: 'phase5' },
+            { name: 'Cross-Browser & Device Testing', type: 'testing', start: 15, weeks: 1, phaseId: 'phase5' },
+            { name: 'Accessibility Testing (WCAG)', type: 'testing', start: 15, weeks: 1, phaseId: 'phase5' },
+            { name: 'User Acceptance Testing', type: 'testing', start: 15, weeks: 1, phaseId: 'phase5' },
+            { name: 'Bug Fixes & Refinements', type: 'development', start: 15, weeks: 1, phaseId: 'phase5' },
+            
+            { phase: 'Phase 6: Launch & Monitoring (Week 16+)', isPhase: true, phaseId: 'phase6', startWeek: 16 },
+            { name: '🚀 LAUNCH NEW NAVIGATION', type: 'milestone', start: 16, phaseId: 'phase6' },
+            { name: 'Monitor 404 Errors', type: 'testing', start: 16, weeks: 1, phaseId: 'phase6' },
+            { name: 'Analytics Review', type: 'analysis', start: 16, weeks: 1, phaseId: 'phase6' },
+            { name: 'Submit Updated Sitemap', type: 'launch', start: 16, weeks: 1, phaseId: 'phase6' },
+            { name: 'Staff Training', type: 'planning', start: 16, weeks: 1, phaseId: 'phase6' }
+        ];
+
+        const tasks10Week = [
+            { phase: 'Phase 1: Research & Validation (Weeks 1-2)', isPhase: true, phaseId: 'phase1', startWeek: 1 },
+            { name: 'Current State + Tree Test', type: 'research', start: 1, weeks: 1, phaseId: 'phase1' },
+            { name: 'Card Sorting + Analysis', type: 'research', start: 2, weeks: 1, phaseId: 'phase1' },
+            
+            { phase: 'Phase 2: New IA Design (Weeks 3-4)', isPhase: true, phaseId: 'phase2', startWeek: 3 },
+            { name: 'Design New Structure (Remove D/E/C)', type: 'planning', start: 3, weeks: 1, phaseId: 'phase2' },
+            { name: 'Validate & Get Approval', type: 'testing', start: 4, weeks: 1, phaseId: 'phase2' },
+            { name: '✓ Stakeholder Approval', type: 'milestone', start: 4, phaseId: 'phase2' },
+            
+            { phase: 'Phase 3: Design & Analytics (Weeks 5-6)', isPhase: true, phaseId: 'phase3', startWeek: 5 },
+            { name: 'Navigation Design (Desktop+Mobile)', type: 'design', start: 5, weeks: 1, phaseId: 'phase3' },
+            { name: 'Learn GA4 & Configure Setup', type: 'research', start: 5, weeks: 1, phaseId: 'phase3' },
+            { name: 'Create Prototypes', type: 'design', start: 6, weeks: 1, phaseId: 'phase3' },
+            { name: 'GA4 Events & Testing', type: 'development', start: 6, weeks: 1, phaseId: 'phase3' },
+            
+            { phase: 'Phase 4: Development & QA (Weeks 7-9)', isPhase: true, phaseId: 'phase4', startWeek: 7 },
+            { name: '✓ COMPLETE BACKUP', type: 'milestone', start: 7, phaseId: 'phase4' },
+            { name: 'Build on Staging + Redirects', type: 'development', start: 7, weeks: 2, phaseId: 'phase4' },
+            { name: 'Update Links & CSS/JS', type: 'development', start: 8, weeks: 1, phaseId: 'phase4' },
+            { name: 'QA & User Testing', type: 'testing', start: 9, weeks: 1, phaseId: 'phase4' },
+            
+            { phase: 'Phase 5: Launch & Monitor (Week 10+)', isPhase: true, phaseId: 'phase5', startWeek: 10 },
+            { name: '🚀 LAUNCH', type: 'milestone', start: 10, phaseId: 'phase5' },
+            { name: 'Monitor & Train', type: 'launch', start: 10, weeks: 1, phaseId: 'phase5' }
+        ];
+
+        let projectStart = new Date();
+        let currentTasks = tasks16Week;
+        let totalWeeks = 16;
+        let phaseStartDates = {}; // Store custom phase start dates
+
+        function initialize() {
+            const today = new Date();
+            const dayOfWeek = today.getDay();
+            const daysToNextMonday = (8 - dayOfWeek) % 7 || 7;
+            projectStart = new Date(today.getTime() + daysToNextMonday * 24 * 60 * 60 * 1000);
+            
+            document.getElementById('startDate').valueAsDate = projectStart;
+            updateChart();
+        }
+
+        function updateChart() {
+            const dateInput = document.getElementById('startDate').value;
+            const timelineValue = parseInt(document.getElementById('timeline').value);
+            
+            projectStart = new Date(dateInput);
+            totalWeeks = timelineValue;
+            currentTasks = timelineValue === 16 ? tasks16Week : tasks10Week;
+            
+            // Reset custom phase dates when changing project start or timeline
+            phaseStartDates = {};
+            
+            updateProjectDates();
+            renderGanttChart();
+        }
+
+        function updateProjectDates() {
+            const projectEnd = new Date(projectStart);
+            projectEnd.setDate(projectEnd.getDate() + (totalWeeks * 7));
+            
+            document.getElementById('projectStart').textContent = formatDate(projectStart);
+            document.getElementById('projectEnd').textContent = formatDate(projectEnd);
+            document.getElementById('duration').textContent = totalWeeks;
+        }
+
+        function formatDate(date) {
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        }
+
+        function getPhaseStartDate(phaseId, defaultWeek) {
+            if (phaseStartDates[phaseId]) {
+                return new Date(phaseStartDates[phaseId]);
+            }
+            
+            const date = new Date(projectStart);
+            date.setDate(date.getDate() + ((defaultWeek - 1) * 7));
+            return date;
+        }
+
+        function updatePhaseDate(phaseId, dateString) {
+            phaseStartDates[phaseId] = dateString;
+            // Just store the date, no need to re-render
+        }
+
+        function renderGanttChart() {
+            const headerRow = document.getElementById('headerRow');
+            const tbody = document.getElementById('ganttBody');
+            
+            // Build header
+            headerRow.innerHTML = '<th>Task Name</th>';
+            for (let i = 1; i <= totalWeeks; i++) {
+                headerRow.innerHTML += `<th>W${i}</th>`;
+            }
+            
+            // Build body
+            tbody.innerHTML = '';
+            
+            currentTasks.forEach(task => {
+                const row = document.createElement('tr');
+                
+                if (task.isPhase) {
+                    row.className = 'phase-row';
+                    const cell = document.createElement('td');
+                    cell.colSpan = totalWeeks + 1;
+                    
+                    const phaseDiv = document.createElement('div');
+                    phaseDiv.className = 'phase-controls';
+                    
+                    const phaseName = document.createElement('span');
+                    phaseName.className = 'phase-name';
+                    phaseName.textContent = task.phase;
+                    
+                    const phaseDate = getPhaseStartDate(task.phaseId, task.startWeek);
+                    const dateControl = document.createElement('div');
+                    dateControl.className = 'phase-date-input';
+                    dateControl.innerHTML = `
+                        <label>Start:</label>
+                        <input type="date" 
+                               value="${phaseDate.toISOString().split('T')[0]}"
+                               onchange="updatePhaseDate('${task.phaseId}', this.value)">
+                    `;
+                    
+                    phaseDiv.appendChild(phaseName);
+                    phaseDiv.appendChild(dateControl);
+                    cell.appendChild(phaseDiv);
+                    row.appendChild(cell);
+                } else {
+                    // Task name
+                    const nameCell = document.createElement('td');
+                    nameCell.className = 'task-name';
+                    if (task.type !== 'milestone') {
+                        nameCell.classList.add('subtask');
+                    }
+                    nameCell.textContent = task.name;
+                    row.appendChild(nameCell);
+                    
+                    // Week cells
+                    for (let week = 1; week <= totalWeeks; week++) {
+                        const cell = document.createElement('td');
+                        cell.className = 'timeline-cell';
+                        
+                        if (task.type === 'milestone' && week === task.start) {
+                            const milestone = document.createElement('div');
+                            milestone.className = 'milestone';
+                            milestone.addEventListener('mouseenter', (e) => showTooltip(e, task));
+                            milestone.addEventListener('mouseleave', hideTooltip);
+                            cell.appendChild(milestone);
+                        } else if (task.weeks && week >= task.start && week < task.start + task.weeks) {
+                            const bar = document.createElement('div');
+                            bar.className = `bar bar-${task.type}`;
+                            bar.addEventListener('mouseenter', (e) => showTooltip(e, task));
+                            bar.addEventListener('mouseleave', hideTooltip);
+                            cell.appendChild(bar);
+                        }
+                        
+                        row.appendChild(cell);
+                    }
+                }
+                
+                tbody.appendChild(row);
+            });
+        }
+
+        function showTooltip(e, task) {
+            const tooltip = document.getElementById('tooltip');
+            const startDate = getTaskDate(task.start);
+            
+            let content = `<strong>${task.name}</strong><br>`;
+            content += `Type: ${task.type}<br>`;
+            content += `Start: ${formatDate(startDate)}`;
+            
+            if (task.weeks) {
+                const endDate = getTaskDate(task.start + task.weeks);
+                content += `<br>End: ${formatDate(endDate)}`;
+                content += `<br>Duration: ${task.weeks} week${task.weeks > 1 ? 's' : ''}`;
+            }
+            
+            tooltip.innerHTML = content;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (e.pageX + 15) + 'px';
+            tooltip.style.top = (e.pageY + 15) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        function getTaskDate(weekNumber) {
+            const date = new Date(projectStart);
+            date.setDate(date.getDate() + ((weekNumber - 1) * 7));
+            return date;
+        }
+
+        function exportCSV() {
+            let csv = 'Phase,Task,Type,Start Week,Duration,Start Date,End Date\n';
+            
+            let currentPhase = '';
+            currentTasks.forEach(task => {
+                if (task.isPhase) {
+                    currentPhase = task.phase;
+                } else {
+                    const startDate = getTaskDate(task.start);
+                    const endDate = task.weeks ? getTaskDate(task.start + task.weeks) : startDate;
+                    const duration = task.weeks || 0;
+                    
+                    csv += `"${currentPhase}","${task.name}","${task.type}",${task.start},${duration},"${startDate.toLocaleDateString()}","${endDate.toLocaleDateString()}"\n`;
+                }
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `EVPL_Gantt_${totalWeeks}weeks_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        window.addEventListener('load', initialize);
+    </script>
+</body>
+</html>
